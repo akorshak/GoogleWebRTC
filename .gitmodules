@@ -1,0 +1,18 @@
+[submodule "buildtools"]
+	path = buildtools
+	url = https://chromium.googlesource.com/chromium/buildtools.git
+[submodule "build"]
+	path = build
+	url = https://chromium.googlesource.com/chromium/src/build.git
+[submodule "base"]
+	path = base
+	url = https://chromium.googlesource.com/chromium/src/base.git
+[submodule "net"]
+	path = net
+	url = https://chromium.googlesource.com/chromium/src/net.git
+[submodule "testing/gmock"]
+	path = testing/gmock
+	url = https://chromium.googlesource.com/external/gmock.git
+[submodule "testing/gtest"]
+	path = testing/gtest
+	url = https://chromium.googlesource.com/chromium/testing/gtest.git
