@@ -55,3 +55,15 @@
 [submodule "third_party/libyuv"]
 	path = third_party/libyuv
 	url = https://chromium.googlesource.com/external/libyuv.git
+[submodule "third_party/openmax_dl"]
+	path = third_party/openmax_dl
+	url = https://chromium.googlesource.com/external/webrtc/deps/third_party/openmax.git
+[submodule "third_party/opus/src"]
+	path = third_party/opus/src
+	url = https://chromium.googlesource.com/chromium/deps/opus.git
+[submodule "third_party/usrsctp/usrsctplib"]
+	path = third_party/usrsctp/usrsctplib
+	url = https://chromium.googlesource.com/external/usrsctplib.git
+[submodule "third_party/yasm/source/patched-yasm"]
+	path = third_party/yasm/source/patched-yasm
+	url = https://chromium.googlesource.com/chromium/deps/yasm/patched-yasm.git
