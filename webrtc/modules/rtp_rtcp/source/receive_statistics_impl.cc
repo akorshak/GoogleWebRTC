@@ -20,7 +20,7 @@
 namespace webrtc {
 
 const int64_t kStatisticsTimeoutMs = 8000;
-const int kStatisticsProcessIntervalMs = 1000;
+const int64_t kStatisticsProcessIntervalMs = 1000;
 
 StreamStatistician::~StreamStatistician() {}
 
@@ -96,6 +96,7 @@ void StreamStatisticianImpl::UpdateCounters(const RTPHeader& header,
 
   if (receive_counters_.packets == 1) {
     received_seq_first_ = header.sequenceNumber;
+    receive_counters_.first_packet_time_ms = clock_->TimeInMilliseconds();
   }
 
   // Count only the new packets received. That is, if packets 1, 2, 3, 5, 4, 6
@@ -491,11 +492,12 @@ int32_t ReceiveStatisticsImpl::Process() {
   return 0;
 }
 
-int32_t ReceiveStatisticsImpl::TimeUntilNextProcess() {
+int64_t ReceiveStatisticsImpl::TimeUntilNextProcess() {
   CriticalSectionScoped cs(receive_statistics_lock_.get());
-  int time_since_last_update = clock_->TimeInMilliseconds() -
+  int64_t time_since_last_update = clock_->TimeInMilliseconds() -
       last_rate_update_ms_;
-  return std::max(kStatisticsProcessIntervalMs - time_since_last_update, 0);
+  return std::max<int64_t>(
+      kStatisticsProcessIntervalMs - time_since_last_update, 0);
 }
 
 void ReceiveStatisticsImpl::RegisterRtcpStatisticsCallback(
@@ -548,7 +550,7 @@ StreamStatistician* NullReceiveStatistics::GetStatistician(
 void NullReceiveStatistics::SetMaxReorderingThreshold(
     int max_reordering_threshold) {}
 
-int32_t NullReceiveStatistics::TimeUntilNextProcess() { return 0; }
+int64_t NullReceiveStatistics::TimeUntilNextProcess() { return 0; }
 
 int32_t NullReceiveStatistics::Process() { return 0; }
 

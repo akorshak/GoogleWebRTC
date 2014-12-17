@@ -20,7 +20,7 @@
 #include "webrtc/modules/audio_coding/codecs/g711/include/audio_encoder_pcm.h"
 #include "webrtc/modules/audio_coding/codecs/g722/include/audio_encoder_g722.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/audio_encoder_ilbc.h"
-#include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/interface/audio_encoder_isacfix.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/audio_encoder_isac.h"
 #include "webrtc/modules/audio_coding/codecs/opus/interface/audio_encoder_opus.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/audio_encoder_pcm16b.h"
@@ -135,14 +135,14 @@ class AudioDecoderTest : public ::testing::Test {
   virtual int EncodeFrame(const int16_t* input,
                           size_t input_len_samples,
                           uint8_t* output) {
-    size_t enc_len_bytes = 0;
+    encoded_info_.encoded_bytes = 0;
     const size_t samples_per_10ms = audio_encoder_->sample_rate_hz() / 100;
     CHECK_EQ(samples_per_10ms * audio_encoder_->Num10MsFramesInNextPacket(),
              input_len_samples);
     scoped_ptr<int16_t[]> interleaved_input(
         new int16_t[channels_ * samples_per_10ms]);
     for (int i = 0; i < audio_encoder_->Num10MsFramesInNextPacket(); ++i) {
-      EXPECT_EQ(0u, enc_len_bytes);
+      EXPECT_EQ(0u, encoded_info_.encoded_bytes);
 
       // Duplicate the mono input signal to however many channels the test
       // wants.
@@ -152,10 +152,10 @@ class AudioDecoderTest : public ::testing::Test {
 
       EXPECT_TRUE(audio_encoder_->Encode(
           0, interleaved_input.get(), audio_encoder_->sample_rate_hz() / 100,
-          data_length_ * 2, output, &enc_len_bytes, &encoded_info_));
+          data_length_ * 2, output, &encoded_info_));
     }
     EXPECT_EQ(payload_type_, encoded_info_.payload_type);
-    return static_cast<int>(enc_len_bytes);
+    return static_cast<int>(encoded_info_.encoded_bytes);
   }
 
   // Encodes and decodes audio. The absolute difference between the input and
@@ -388,38 +388,20 @@ class AudioDecoderIsacFixTest : public AudioDecoderTest {
  protected:
   AudioDecoderIsacFixTest() : AudioDecoderTest() {
     codec_input_rate_hz_ = 16000;
-    input_size_ = 160;
     frame_size_ = 480;
     data_length_ = 10 * frame_size_;
-    decoder_ = new AudioDecoderIsacFix;
-    assert(decoder_);
-    WebRtcIsacfix_Create(&encoder_);
-  }
+    AudioEncoderDecoderIsacFix::Config config;
+    config.payload_type = payload_type_;
+    config.sample_rate_hz = codec_input_rate_hz_;
+    config.frame_size_ms =
+        1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
 
-  ~AudioDecoderIsacFixTest() {
-    WebRtcIsacfix_Free(encoder_);
+    // We need to create separate AudioEncoderDecoderIsacFix objects for
+    // encoding and decoding, because the test class destructor destroys them
+    // both.
+    audio_encoder_.reset(new AudioEncoderDecoderIsacFix(config));
+    decoder_ = new AudioEncoderDecoderIsacFix(config);
   }
-
-  virtual void InitEncoder() {
-    ASSERT_EQ(0, WebRtcIsacfix_EncoderInit(encoder_, 1));  // Fixed mode.
-    ASSERT_EQ(0,
-              WebRtcIsacfix_Control(encoder_, 32000, 30));  // 32 kbps, 30 ms.
-  }
-
-  virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
-                          uint8_t* output) {
-    // Insert 3 * 10 ms. Expect non-zero output on third call.
-    EXPECT_EQ(0, WebRtcIsacfix_Encode(encoder_, input, output));
-    input += input_size_;
-    EXPECT_EQ(0, WebRtcIsacfix_Encode(encoder_, input, output));
-    input += input_size_;
-    int enc_len_bytes = WebRtcIsacfix_Encode(encoder_, input, output);
-    EXPECT_GT(enc_len_bytes, 0);
-    return enc_len_bytes;
-  }
-
-  ISACFIX_MainStruct* encoder_;
-  int input_size_;
 };
 
 class AudioDecoderG722Test : public AudioDecoderTest {
@@ -546,14 +528,20 @@ TEST_F(AudioDecoderIsacSwbTest, EncodeDecode) {
   DecodePlcTest();
 }
 
-TEST_F(AudioDecoderIsacFixTest, DISABLED_EncodeDecode) {
+TEST_F(AudioDecoderIsacFixTest, EncodeDecode) {
   int tolerance = 11034;
   double mse = 3.46e6;
   int delay = 54;  // Delay from input to output.
   EXPECT_TRUE(CodecSupported(kDecoderISAC));
-  EncodeDecodeTest(735, tolerance, mse, delay);
+#ifdef WEBRTC_ANDROID
+  static const int kEncodedBytes = 685;
+#else
+  static const int kEncodedBytes = 671;
+#endif
+  EncodeDecodeTest(kEncodedBytes, tolerance, mse, delay);
   ReInitTest();
-  EXPECT_FALSE(decoder_->HasDecodePlc());
+  EXPECT_TRUE(decoder_->HasDecodePlc());
+  DecodePlcTest();
 }
 
 TEST_F(AudioDecoderG722Test, EncodeDecode) {

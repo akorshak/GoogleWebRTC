@@ -43,8 +43,7 @@
 /links
 /links.db
 /out
-/resources/*.*
-/resources/*/*.*
+/resources
 /talk/examples/android/bin
 /talk/examples/android/gen
 /talk/examples/android/libs

@@ -47,8 +47,8 @@ namespace {
 RTCPReportBlock AggregateReportBlocks(
     const std::vector<RTCPReportBlock>& report_blocks,
     std::map<uint32_t, RTCPReportBlock>* prev_report_blocks) {
-  int fraction_lost_sum = 0;
-  int fl_seq_num_sum = 0;
+  int num_sequence_numbers = 0;
+  int num_lost_sequence_numbers = 0;
   int jitter_sum = 0;
   int number_of_report_blocks = 0;
   RTCPReportBlock aggregate;
@@ -63,18 +63,20 @@ RTCPReportBlock AggregateReportBlocks(
       // weight for it.
       int seq_num_diff = report_block->extendedHighSeqNum -
                          prev_report_block->second.extendedHighSeqNum;
-      if (seq_num_diff > 0) {
-        fraction_lost_sum += report_block->fractionLost * seq_num_diff;
-        fl_seq_num_sum += seq_num_diff;
+      int cum_loss_diff = report_block->cumulativeLost -
+                          prev_report_block->second.cumulativeLost;
+      if (seq_num_diff >= 0 && cum_loss_diff >= 0) {
+        num_sequence_numbers += seq_num_diff;
+        num_lost_sequence_numbers += cum_loss_diff;
       }
     }
     jitter_sum += report_block->jitter;
     ++number_of_report_blocks;
     (*prev_report_blocks)[report_block->sourceSSRC] = *report_block;
   }
-  if (fl_seq_num_sum > 0) {
-    aggregate.fractionLost =
-        (fraction_lost_sum + fl_seq_num_sum / 2) / fl_seq_num_sum;
+  if (num_sequence_numbers > 0) {
+    aggregate.fractionLost = ((num_lost_sequence_numbers * 255) +
+        (num_sequence_numbers / 2)) / num_sequence_numbers;
   }
   if (number_of_report_blocks > 0) {
     aggregate.jitter =
@@ -147,9 +149,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
       sender_(sender),
       nack_history_size_sender_(kSendSidePacketHistorySize),
       max_nack_reordering_threshold_(kMaxPacketAgeToNack),
-      pre_render_callback_(NULL),
-      start_ms_(Clock::GetRealTimeClock()->TimeInMilliseconds()),
-      start_send_ms_(0) {
+      pre_render_callback_(NULL) {
   RtpRtcp::Configuration configuration = CreateRtpRtcpConfiguration();
   configuration.remote_bitrate_estimator = remote_bitrate_estimator;
   configuration.receive_statistics = vie_receiver_.GetReceiveStatistics();
@@ -237,76 +237,80 @@ ViEChannel::~ViEChannel() {
 }
 
 void ViEChannel::UpdateHistograms() {
-  // TODO(asapersson): Use time from first sent/received packet.
-  float elapsed_minutes =
-      (Clock::GetRealTimeClock()->TimeInMilliseconds() - start_ms_) / 60000.0f;
-  if (elapsed_minutes < metrics::kMinRunTimeInSeconds / 60.0f) {
-    return;
-  }
+  int64_t now = Clock::GetRealTimeClock()->TimeInMilliseconds();
   RtcpPacketTypeCounter rtcp_sent;
   RtcpPacketTypeCounter rtcp_received;
   GetRtcpPacketTypeCounters(&rtcp_sent, &rtcp_received);
 
   if (sender_) {
-    if (rtcp_received.nack_requests > 0) {
-      RTC_HISTOGRAM_PERCENTAGE(
-          "WebRTC.Video.UniqueNackRequestsReceivedInPercent",
-              rtcp_received.UniqueNackRequestsInPercent());
+    int64_t elapsed_sec = rtcp_received.TimeSinceFirstPacketInMs(now) / 1000;
+    if (elapsed_sec > metrics::kMinRunTimeInSeconds) {
+      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.NackPacketsReceivedPerMinute",
+          rtcp_received.nack_packets / elapsed_sec / 60);
+      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FirPacketsReceivedPerMinute",
+          rtcp_received.fir_packets / elapsed_sec / 60);
+      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PliPacketsReceivedPerMinute",
+          rtcp_received.pli_packets / elapsed_sec / 60);
+      if (rtcp_received.nack_requests > 0) {
+        RTC_HISTOGRAM_PERCENTAGE(
+            "WebRTC.Video.UniqueNackRequestsReceivedInPercent",
+                rtcp_received.UniqueNackRequestsInPercent());
+      }
     }
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.NackPacketsReceivedPerMinute",
-        rtcp_received.nack_packets / elapsed_minutes);
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FirPacketsReceivedPerMinute",
-        rtcp_received.fir_packets / elapsed_minutes);
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PliPacketsReceivedPerMinute",
-        rtcp_received.pli_packets / elapsed_minutes);
   } else if (vie_receiver_.GetRemoteSsrc() > 0) {
     // Get receive stats if we are receiving packets, i.e. there is a remote
     // ssrc.
-    if (rtcp_sent.nack_requests > 0) {
-      RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.UniqueNackRequestsSentInPercent",
-          rtcp_sent.UniqueNackRequestsInPercent());
+    int64_t elapsed_sec = rtcp_sent.TimeSinceFirstPacketInMs(now) / 1000;
+    if (elapsed_sec > metrics::kMinRunTimeInSeconds) {
+      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.NackPacketsSentPerMinute",
+          rtcp_sent.nack_packets / elapsed_sec / 60);
+      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FirPacketsSentPerMinute",
+          rtcp_sent.fir_packets / elapsed_sec / 60);
+      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PliPacketsSentPerMinute",
+          rtcp_sent.pli_packets / elapsed_sec / 60);
+      if (rtcp_sent.nack_requests > 0) {
+        RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.UniqueNackRequestsSentInPercent",
+            rtcp_sent.UniqueNackRequestsInPercent());
+      }
     }
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.NackPacketsSentPerMinute",
-        rtcp_sent.nack_packets / elapsed_minutes);
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.FirPacketsSentPerMinute",
-        rtcp_sent.fir_packets / elapsed_minutes);
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PliPacketsSentPerMinute",
-        rtcp_sent.pli_packets / elapsed_minutes);
 
     StreamDataCounters rtp;
     StreamDataCounters rtx;
     GetReceiveStreamDataCounters(&rtp, &rtx);
     StreamDataCounters rtp_rtx = rtp;
     rtp_rtx.Add(rtx);
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.BitrateReceivedInKbps",
-        rtp_rtx.TotalBytes() * 8 / (elapsed_minutes * 60) / 1000);
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.MediaBitrateReceivedInKbps",
-        rtp.MediaPayloadBytes() * 8 / (elapsed_minutes * 60) / 1000);
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PaddingBitrateReceivedInKbps",
-        rtp_rtx.padding_bytes * 8 / (elapsed_minutes * 60) / 1000);
-    RTC_HISTOGRAM_COUNTS_10000(
-        "WebRTC.Video.RetransmittedBitrateReceivedInKbps",
-            rtp_rtx.RetransmittedBytes() * 8 / (elapsed_minutes * 60) / 1000);
-    uint32_t ssrc = 0;
-    if (vie_receiver_.GetRtxSsrc(&ssrc)) {
-      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RtxBitrateReceivedInKbps",
-          rtx.TotalBytes() * 8 / (elapsed_minutes * 60) / 1000);
+    elapsed_sec = rtp_rtx.TimeSinceFirstPacketInMs(now) / 1000;
+    if (elapsed_sec > metrics::kMinRunTimeInSeconds) {
+      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.BitrateReceivedInKbps",
+          rtp_rtx.TotalBytes() * 8 / elapsed_sec / 1000);
+      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.MediaBitrateReceivedInKbps",
+          rtp.MediaPayloadBytes() * 8 / elapsed_sec / 1000);
+      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.PaddingBitrateReceivedInKbps",
+          rtp_rtx.padding_bytes * 8 / elapsed_sec / 1000);
+      RTC_HISTOGRAM_COUNTS_10000(
+          "WebRTC.Video.RetransmittedBitrateReceivedInKbps",
+              rtp_rtx.RetransmittedBytes() * 8 / elapsed_sec / 1000);
+      uint32_t ssrc = 0;
+      if (vie_receiver_.GetRtxSsrc(&ssrc)) {
+        RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RtxBitrateReceivedInKbps",
+            rtx.TotalBytes() * 8 / elapsed_sec / 1000);
+      }
     }
   }
 }
 
 void ViEChannel::UpdateHistogramsAtStopSend() {
-  // TODO(asapersson): Use time from first sent packet.
-  int64_t elapsed_sec =
-      (Clock::GetRealTimeClock()->TimeInMilliseconds() - start_send_ms_) / 1000;
-  if (elapsed_sec < metrics::kMinRunTimeInSeconds) {
-    return;
-  }
   StreamDataCounters rtp;
   StreamDataCounters rtx;
   GetSendStreamDataCounters(&rtp, &rtx);
   StreamDataCounters rtp_rtx = rtp;
   rtp_rtx.Add(rtx);
+
+  int64_t elapsed_sec = rtp_rtx.TimeSinceFirstPacketInMs(
+      Clock::GetRealTimeClock()->TimeInMilliseconds()) / 1000;
+  if (elapsed_sec < metrics::kMinRunTimeInSeconds) {
+    return;
+  }
   RTC_HISTOGRAM_COUNTS_100000("WebRTC.Video.BitrateSentInKbps",
       rtp_rtx.TotalBytes() * 8 / elapsed_sec / 1000);
   RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.MediaBitrateSentInKbps",
@@ -1393,7 +1397,6 @@ int32_t ViEChannel::StartSend() {
     rtp_rtcp->SetSendingMediaStatus(true);
     rtp_rtcp->SetSendingStatus(true);
   }
-  start_send_ms_ = Clock::GetRealTimeClock()->TimeInMilliseconds();
   return 0;
 }
 

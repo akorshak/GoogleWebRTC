@@ -88,6 +88,22 @@ cricket::VideoFormat VideoFormatFromVieCodec(const webrtc::VideoCodec& codec) {
 }
 
 template <class T>
+void Clamp(cricket::Settable<T>* box, T min, T max) {
+  T val;
+  if (!box->Get(&val)) {
+    return;
+  }
+  if (val < min) {
+    box->Set(min);
+    return;
+  }
+  if (val > max) {
+    box->Set(max);
+    return;
+  }
+}
+
+template <class T>
 bool Changed(cricket::Settable<T> proposed,
              cricket::Settable<T> original) {
   return proposed.IsSet() && proposed != original;
@@ -1153,10 +1169,6 @@ WebRtcVideoEngine::~WebRtcVideoEngine() {
     Terminate();
   }
 
-  if (simulcast_encoder_factory_) {
-    SetExternalEncoderFactory(NULL);
-  }
-
   tracing_->SetTraceCallback(NULL);
   // Test to see if the media processor was deregistered properly.
   ASSERT(SignalMediaFrame.is_empty());
@@ -1675,10 +1687,13 @@ void WebRtcVideoEngine::SetExternalDecoderFactory(
 
 void WebRtcVideoEngine::SetExternalEncoderFactory(
     WebRtcVideoEncoderFactory* encoder_factory) {
-  // Deleted after WebRtcVideoEngine::SetExternalEncoderFactory is
-  // completed, which will remove the references to it.
-  rtc::scoped_ptr<WebRtcVideoEncoderFactory> old_factory(
-      simulcast_encoder_factory_.release());
+  if (encoder_factory_ == encoder_factory)
+    return;
+
+  // No matter what happens we shouldn't hold on to a stale
+  // SimulcastEncoderFactory.
+  simulcast_encoder_factory_.reset();
+
   if (encoder_factory) {
     const std::vector<WebRtcVideoEncoderFactory::VideoCodec>& codecs =
         encoder_factory->codecs();
@@ -1688,9 +1703,6 @@ void WebRtcVideoEngine::SetExternalEncoderFactory(
       encoder_factory = simulcast_encoder_factory_.get();
     }
   }
-
-  if (encoder_factory_ == encoder_factory)
-    return;
 
   encoder_factory_ = encoder_factory;
 
@@ -3083,6 +3095,9 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
   // will not overwrite the previous option value.
   VideoOptions original = options_;
   options_.SetAll(options);
+
+  Clamp(&options_.system_low_adaptation_threshhold, 0.0f, 1.0f);
+  Clamp(&options_.system_high_adaptation_threshhold, 0.0f, 1.0f);
 
   bool use_simulcast_adapter;
   if (options.use_simulcast_adapter.Get(&use_simulcast_adapter) &&

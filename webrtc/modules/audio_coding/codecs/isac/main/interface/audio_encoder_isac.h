@@ -11,101 +11,95 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_INTERFACE_AUDIO_ENCODER_ISAC_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_INTERFACE_AUDIO_ENCODER_ISAC_H_
 
-#include <vector>
-
-#include "webrtc/base/thread_annotations.h"
-#include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
+#include "webrtc/modules/audio_coding/codecs/isac/audio_encoder_isac_t.h"
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
-class CriticalSectionWrapper;
+struct IsacFloat {
+  typedef ISACStruct instance_type;
+  static const bool has_32kHz = true;
+  static inline int16_t Control(instance_type* inst,
+                                int32_t rate,
+                                int16_t framesize) {
+    return WebRtcIsac_Control(inst, rate, framesize);
+  }
+  static inline int16_t ControlBwe(instance_type* inst,
+                                   int32_t rate_bps,
+                                   int16_t frame_size_ms,
+                                   int16_t enforce_frame_size) {
+    return WebRtcIsac_ControlBwe(inst, rate_bps, frame_size_ms,
+                                 enforce_frame_size);
+  }
+  static inline int16_t Create(instance_type** inst) {
+    return WebRtcIsac_Create(inst);
+  }
+  static inline int16_t Decode(instance_type* inst,
+                               const uint8_t* encoded,
+                               int16_t len,
+                               int16_t* decoded,
+                               int16_t* speech_type) {
+    return WebRtcIsac_Decode(inst, encoded, len, decoded, speech_type);
+  }
+  static inline int16_t DecodePlc(instance_type* inst,
+                                  int16_t* decoded,
+                                  int16_t num_lost_frames) {
+    return WebRtcIsac_DecodePlc(inst, decoded, num_lost_frames);
+  }
 
-class AudioEncoderDecoderIsac : public AudioEncoder, public AudioDecoder {
- public:
-  // For constructing an encoder in instantaneous mode. Allowed combinations
-  // are
-  //  - 16000 Hz, 30 ms, 10000-32000 bps
-  //  - 16000 Hz, 60 ms, 10000-32000 bps
-  //  - 32000 Hz, 30 ms, 10000-56000 bps
-  struct Config {
-    Config();
-    bool IsOk() const;
-    int payload_type;
-    int sample_rate_hz;
-    int frame_size_ms;
-    int bit_rate;  // Limit on the short-term average bit rate, in bits/second.
-  };
+  static inline int16_t DecodeRcu(instance_type* inst,
+                                  const uint8_t* encoded,
+                                  int16_t len,
+                                  int16_t* decoded,
+                                  int16_t* speech_type) {
+    return WebRtcIsac_DecodeRcu(inst, encoded, len, decoded, speech_type);
+  }
+  static inline int16_t DecoderInit(instance_type* inst) {
+    return WebRtcIsac_DecoderInit(inst);
+  }
+  static inline int16_t Encode(instance_type* inst,
+                               const int16_t* speech_in,
+                               uint8_t* encoded) {
+    return WebRtcIsac_Encode(inst, speech_in, encoded);
+  }
+  static inline int16_t EncoderInit(instance_type* inst, int16_t coding_mode) {
+    return WebRtcIsac_EncoderInit(inst, coding_mode);
+  }
+  static inline uint16_t EncSampRate(instance_type* inst) {
+    return WebRtcIsac_EncSampRate(inst);
+  }
 
-  // For constructing an encoder in channel-adaptive mode. The sample rate must
-  // be 16000 Hz; the initial frame size can be 30 or 60 ms; and the initial bit
-  // rate can be 10000-56000 bps.
-  struct ConfigAdaptive {
-    ConfigAdaptive();
-    bool IsOk() const;
-    int payload_type;
-    int sample_rate_hz;
-    int initial_frame_size_ms;
-    int initial_bit_rate;
-    bool enforce_frame_size;  // Prevent adaptive changes to the frame size?
-  };
+  static inline int16_t Free(instance_type* inst) {
+    return WebRtcIsac_Free(inst);
+  }
+  static inline int16_t GetErrorCode(instance_type* inst) {
+    return WebRtcIsac_GetErrorCode(inst);
+  }
 
-  explicit AudioEncoderDecoderIsac(const Config& config);
-  explicit AudioEncoderDecoderIsac(const ConfigAdaptive& config);
-  virtual ~AudioEncoderDecoderIsac() OVERRIDE;
+  static inline int16_t GetNewFrameLen(instance_type* inst) {
+    return WebRtcIsac_GetNewFrameLen(inst);
+  }
 
-  // AudioEncoder public methods.
-  virtual int sample_rate_hz() const OVERRIDE;
-  virtual int num_channels() const OVERRIDE;
-  virtual int Num10MsFramesInNextPacket() const OVERRIDE;
-  virtual int Max10MsFramesInAPacket() const OVERRIDE;
-
-  // AudioDecoder methods.
-  virtual int Decode(const uint8_t* encoded,
-                     size_t encoded_len,
-                     int16_t* decoded,
-                     SpeechType* speech_type) OVERRIDE;
-  virtual int DecodeRedundant(const uint8_t* encoded,
-                              size_t encoded_len,
-                              int16_t* decoded,
-                              SpeechType* speech_type) OVERRIDE;
-  virtual bool HasDecodePlc() const OVERRIDE;
-  virtual int DecodePlc(int num_frames, int16_t* decoded) OVERRIDE;
-  virtual int Init() OVERRIDE;
-  virtual int IncomingPacket(const uint8_t* payload,
-                             size_t payload_len,
-                             uint16_t rtp_sequence_number,
-                             uint32_t rtp_timestamp,
-                             uint32_t arrival_timestamp) OVERRIDE;
-  virtual int ErrorCode() OVERRIDE;
-
- protected:
-  // AudioEncoder protected method.
-  virtual bool EncodeInternal(uint32_t timestamp,
-                              const int16_t* audio,
-                              size_t max_encoded_bytes,
-                              uint8_t* encoded,
-                              size_t* encoded_bytes,
-                              EncodedInfo* info) OVERRIDE;
-
- private:
-  const int payload_type_;
-
-  // iSAC encoder/decoder state, guarded by a mutex to ensure that encode calls
-  // from one thread won't clash with decode calls from another thread.
-  const scoped_ptr<CriticalSectionWrapper> lock_;
-  ISACStruct* isac_state_ GUARDED_BY(lock_);
-
-  // Have we accepted input but not yet emitted it in a packet?
-  bool packet_in_progress_;
-
-  // Timestamp of the first input of the currently in-progress packet.
-  uint32_t packet_timestamp_;
-
-  DISALLOW_COPY_AND_ASSIGN(AudioEncoderDecoderIsac);
+  static inline int16_t SetDecSampRate(instance_type* inst,
+                                       uint16_t sample_rate_hz) {
+    return WebRtcIsac_SetDecSampRate(inst, sample_rate_hz);
+  }
+  static inline int16_t SetEncSampRate(instance_type* inst,
+                                       uint16_t sample_rate_hz) {
+    return WebRtcIsac_SetEncSampRate(inst, sample_rate_hz);
+  }
+  static inline int16_t UpdateBwEstimate(instance_type* inst,
+                                         const uint8_t* encoded,
+                                         int32_t packet_size,
+                                         uint16_t rtp_seq_number,
+                                         uint32_t send_ts,
+                                         uint32_t arr_ts) {
+    return WebRtcIsac_UpdateBwEstimate(inst, encoded, packet_size,
+                                       rtp_seq_number, send_ts, arr_ts);
+  }
 };
+
+typedef AudioEncoderDecoderIsacT<IsacFloat> AudioEncoderDecoderIsac;
 
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_INTERFACE_AUDIO_ENCODER_ISAC_H_
