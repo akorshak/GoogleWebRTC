@@ -76,3 +76,6 @@
 [submodule "tools/swarming_client"]
 	path = tools/swarming_client
 	url = https://chromium.googlesource.com/external/swarming.client.git
+[submodule "third_party/jsoncpp/source/include"]
+	path = third_party/jsoncpp/source/include
+	url = https://chromium.googlesource.com/external/jsoncpp/jsoncpp/include.git
