@@ -28,3 +28,30 @@
 [submodule "third_party/junit"]
 	path = third_party/junit
 	url = https://chromium.googlesource.com/external/webrtc/deps/third_party/junit
+[submodule "third_party/colorama/src"]
+	path = third_party/colorama/src
+	url = https://chromium.googlesource.com/external/colorama.git
+[submodule "third_party/icu"]
+	path = third_party/icu
+	url = https://chromium.googlesource.com/chromium/deps/icu.git
+[submodule "third_party/jsr-305/src"]
+	path = third_party/jsr-305/src
+	url = https://chromium.googlesource.com/external/jsr-305.git
+[submodule "third_party/libc++/trunk"]
+	path = third_party/libc++/trunk
+	url = https://chromium.googlesource.com/chromium/llvm-project/libcxx.git
+[submodule "third_party/libc++abi/trunk"]
+	path = third_party/libc++abi/trunk
+	url = https://chromium.googlesource.com/chromium/llvm-project/libcxxabi.git
+[submodule "third_party/libjpeg_turbo"]
+	path = third_party/libjpeg_turbo
+	url = https://chromium.googlesource.com/chromium/deps/libjpeg_turbo
+[submodule "third_party/libsrtp"]
+	path = third_party/libsrtp
+	url = https://chromium.googlesource.com/chromium/deps/libsrtp.git
+[submodule "third_party/libvpx"]
+	path = third_party/libvpx
+	url = https://chromium.googlesource.com/chromium/deps/libvpx.git
+[submodule "third_party/libyuv"]
+	path = third_party/libyuv
+	url = https://chromium.googlesource.com/external/libyuv.git
