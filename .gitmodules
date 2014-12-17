@@ -16,3 +16,12 @@
 [submodule "testing/gtest"]
 	path = testing/gtest
 	url = https://chromium.googlesource.com/chromium/testing/gtest.git
+[submodule "third_party/zlib"]
+	path = third_party/zlib
+	url = https://chromium.googlesource.com/chromium/src/third_party/zlib.git
+[submodule "third_party/sqlite"]
+	path = third_party/sqlite
+	url = https://chromium.googlesource.com/chromium/src/third_party/sqlite.git
+[submodule "third_party/android_tools"]
+	path = third_party/android_tools
+	url = https://chromium.googlesource.com/android_tools.git
