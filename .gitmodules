@@ -1,6 +1,6 @@
 [submodule "buildtools"]
 	path = buildtools
-	url = https://chromium.googlesource.com/chromium/buildtools.git
+	url = https://chromium.googlesource.com/chromium/buildtools.git@535aff24c308a715751028173e569596bcfe12a7
 [submodule "build"]
 	path = build
 	url = https://chromium.googlesource.com/chromium/src/build.git
@@ -12,10 +12,10 @@
 	url = https://chromium.googlesource.com/chromium/src/net.git
 [submodule "testing/gmock"]
 	path = testing/gmock
-	url = https://chromium.googlesource.com/external/gmock.git
+	url = https://chromium.googlesource.com/external/gmock.git@29763965ab52f24565299976b936d1265cb6a271
 [submodule "testing/gtest"]
 	path = testing/gtest
-	url = https://chromium.googlesource.com/chromium/testing/gtest.git
+	url = https://chromium.googlesource.com/chromium/testing/gtest.git@8245545b6dc9c4703e6496d1efd19e975ad2b038
 [submodule "third_party/zlib"]
 	path = third_party/zlib
 	url = https://chromium.googlesource.com/chromium/src/third_party/zlib.git
@@ -24,61 +24,61 @@
 	url = https://chromium.googlesource.com/chromium/src/third_party/sqlite.git
 [submodule "third_party/android_tools"]
 	path = third_party/android_tools
-	url = https://chromium.googlesource.com/android_tools.git
+	url = https://chromium.googlesource.com/android_tools.git@4f723e2a5fa5b7b8a198072ac19b92344be2b271
 [submodule "third_party/junit"]
 	path = third_party/junit
 	url = https://chromium.googlesource.com/external/webrtc/deps/third_party/junit
 [submodule "third_party/colorama/src"]
 	path = third_party/colorama/src
-	url = https://chromium.googlesource.com/external/colorama.git
+	url = https://chromium.googlesource.com/external/colorama.git@799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8
 [submodule "third_party/icu"]
 	path = third_party/icu
-	url = https://chromium.googlesource.com/chromium/deps/icu.git
+	url = https://chromium.googlesource.com/chromium/deps/icu.git@53ecf0f68b27a004bef5526553b8e5f6c235b80b
 [submodule "third_party/jsr-305/src"]
 	path = third_party/jsr-305/src
-	url = https://chromium.googlesource.com/external/jsr-305.git
+	url = https://chromium.googlesource.com/external/jsr-305.git@642c508235471f7220af6d5df2d3210e3bfc0919
 [submodule "third_party/libc++/trunk"]
 	path = third_party/libc++/trunk
-	url = https://chromium.googlesource.com/chromium/llvm-project/libcxx.git
+	url = https://chromium.googlesource.com/chromium/llvm-project/libcxx.git@48198f9110397fff47fe7c37cbfa296be7d44d3d
 [submodule "third_party/libc++abi/trunk"]
 	path = third_party/libc++abi/trunk
-	url = https://chromium.googlesource.com/chromium/llvm-project/libcxxabi.git
+	url = https://chromium.googlesource.com/chromium/llvm-project/libcxxabi.git@4ad1009ab3a59fa7a6896d74d5e4de5885697f95
 [submodule "third_party/libjpeg_turbo"]
 	path = third_party/libjpeg_turbo
-	url = https://chromium.googlesource.com/chromium/deps/libjpeg_turbo
+	url = https://chromium.googlesource.com/chromium/deps/libjpeg_turbo.git@034e9a9747e0983bc19808ea70e469bc8342081f
 [submodule "third_party/libsrtp"]
 	path = third_party/libsrtp
-	url = https://chromium.googlesource.com/chromium/deps/libsrtp.git
+	url = https://chromium.googlesource.com/chromium/deps/libsrtp.git@6446144c7f083552f21cc4e6768e891bcb767574
 [submodule "third_party/libvpx"]
 	path = third_party/libvpx
-	url = https://chromium.googlesource.com/chromium/deps/libvpx.git
+	url = https://chromium.googlesource.com/chromium/deps/libvpx.git@9fbec818f6a2223dbc4b5ea1c0eac22304b58f44
 [submodule "third_party/libyuv"]
 	path = third_party/libyuv
-	url = https://chromium.googlesource.com/external/libyuv.git
+	url = https://chromium.googlesource.com/external/libyuv.git@d204db647e591ccf0e2589236ecea90330d65a66
 [submodule "third_party/openmax_dl"]
 	path = third_party/openmax_dl
-	url = https://chromium.googlesource.com/external/webrtc/deps/third_party/openmax.git
+	url = https://chromium.googlesource.com/external/webrtc/deps/third_party/openmax.git@01642706d2b37cb7b9db84add870ea0fdabdf5ad
 [submodule "third_party/opus/src"]
 	path = third_party/opus/src
-	url = https://chromium.googlesource.com/chromium/deps/opus.git
+	url = https://chromium.googlesource.com/chromium/deps/opus.git@cae696156f1e60006e39821e79a1811ae1933c69
 [submodule "third_party/usrsctp/usrsctplib"]
 	path = third_party/usrsctp/usrsctplib
-	url = https://chromium.googlesource.com/external/usrsctplib.git
+	url = https://chromium.googlesource.com/external/usrsctplib.git@190c8cbfcf8fd810aa09e0fab4ca62a8ce724e14
 [submodule "third_party/yasm/source/patched-yasm"]
 	path = third_party/yasm/source/patched-yasm
-	url = https://chromium.googlesource.com/chromium/deps/yasm/patched-yasm.git
+	url = https://chromium.googlesource.com/chromium/deps/yasm/patched-yasm.git@4671120cd8558ce62ee8672ebf3eb6f5216f909b
 [submodule "third_party/boringssl/src"]
 	path = third_party/boringssl/src
-	url = https://boringssl.googlesource.com/boringssl.git
+	url = https://boringssl.googlesource.com/boringssl.git@00505ec2e1e4c3047b4f61a306f2ac1372fa7640
 [submodule "tools/gyp"]
 	path = tools/gyp
-	url = https://chromium.googlesource.com/external/gyp.git
+	url = https://chromium.googlesource.com/external/gyp.git@fe00999dfaee449d3465a9316778434884da4fa7
 [submodule "tools/swarming_client"]
 	path = tools/swarming_client
-	url = https://chromium.googlesource.com/external/swarming.client.git
+	url = https://chromium.googlesource.com/external/swarming.client.git@1d4965cfb2250b2e5a0e1f38deb2c7494569400c
 [submodule "third_party/jsoncpp/source/include"]
 	path = third_party/jsoncpp/source/include
-	url = https://chromium.googlesource.com/external/jsoncpp/jsoncpp/include.git
+	url = https://chromium.googlesource.com/external/jsoncpp/jsoncpp/include.git@b0dd48e02b6e6248328db78a65b5c601f150c349
 [submodule "third_party/jsoncpp/source/src/lib_json"]
 	path = third_party/jsoncpp/source/src/lib_json
-	url = https://chromium.googlesource.com/external/jsoncpp/jsoncpp/src/lib_json.git
+	url = https://chromium.googlesource.com/external/jsoncpp/jsoncpp/src/lib_json.git@a8caa51ba2f80971a45880425bf2ae864a786784
