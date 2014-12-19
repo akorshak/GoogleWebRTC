@@ -13,9 +13,6 @@
 [submodule "testing/gmock"]
 	path = testing/gmock
 	url = https://chromium.googlesource.com/external/googlemock.git
-[submodule "testing/gtest"]
-	path = testing/gtest
-	url = https://chromium.googlesource.com/external/googletest.git
 [submodule "third_party/zlib"]
 	path = third_party/zlib
 	url = https://chromium.googlesource.com/chromium/src/third_party/zlib.git
@@ -82,3 +79,6 @@
 [submodule "third_party/jsoncpp/source/src/lib_json"]
 	path = third_party/jsoncpp/source/src/lib_json
 	url = https://chromium.googlesource.com/external/jsoncpp/jsoncpp/src/lib_json.git
+[submodule "testing/gtest"]
+	path = testing/gtest
+	url = https://chromium.googlesource.com/external/googletest.git
