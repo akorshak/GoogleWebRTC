@@ -79,6 +79,3 @@
 [submodule "third_party/jsoncpp/source/src/lib_json"]
 	path = third_party/jsoncpp/source/src/lib_json
 	url = https://chromium.googlesource.com/external/jsoncpp/jsoncpp/src/lib_json.git
-[submodule "testing/gtest"]
-	path = testing/gtest
-	url = https://chromium.googlesource.com/external/googletest.git
